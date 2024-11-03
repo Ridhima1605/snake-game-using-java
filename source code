@@ -1,0 +1,131 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.util.LinkedList;
+import java.util.Random;
+
+public class SnakeGame extends JFrame implements ActionListener {
+    private final int WIDTH = 600;
+    private final int HEIGHT = 400;
+    private final int SIZE = 10;
+    private final int ALL_DOTS = (WIDTH * HEIGHT) / (SIZE * SIZE);
+    
+    private LinkedList<Point> snake;
+    private Point food;
+    private char direction;
+    private boolean isGameOver;
+    
+    private Timer timer;
+    
+    public SnakeGame() {
+        setTitle("Snake Game");
+        setSize(WIDTH, HEIGHT);
+        setResizable(false);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        
+        snake = new LinkedList<>();
+        snake.add(new Point(WIDTH / 2, HEIGHT / 2));
+        direction = 'R'; // Start moving to the right
+        spawnFood();
+        
+        timer = new Timer(100, this);
+        timer.start();
+        
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_UP: if (direction != 'D') direction = 'U'; break;
+                    case KeyEvent.VK_DOWN: if (direction != 'U') direction = 'D'; break;
+                    case KeyEvent.VK_LEFT: if (direction != 'R') direction = 'L'; break;
+                    case KeyEvent.VK_RIGHT: if (direction != 'L') direction = 'R'; break;
+                }
+            }
+        });
+        
+        setVisible(true);
+    }
+
+    private void spawnFood() {
+        Random rand = new Random();
+        int x = rand.nextInt(WIDTH / SIZE) * SIZE;
+        int y = rand.nextInt(HEIGHT / SIZE) * SIZE;
+        food = new Point(x, y);
+    }
+    
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (isGameOver) {
+            timer.stop();
+            JOptionPane.showMessageDialog(this, "Game Over!");
+            System.exit(0);
+        } else {
+            moveSnake();
+            checkCollision();
+            repaint();
+        }
+    }
+    
+    private void moveSnake() {
+        Point head = snake.getFirst();
+        Point newHead = new Point(head);
+        
+        switch (direction) {
+            case 'U': newHead.y -= SIZE; break;
+            case 'D': newHead.y += SIZE; break;
+            case 'L': newHead.x -= SIZE; break;
+            case 'R': newHead.x += SIZE; break;
+        }
+        
+        snake.addFirst(newHead);
+        if (newHead.equals(food)) {
+            spawnFood(); // Grow the snake
+        } else {
+            snake.removeLast(); // Move the snake
+        }
+    }
+    
+    private void checkCollision() {
+        Point head = snake.getFirst();
+        // Check for collision with walls
+        if (head.x < 0 || head.x >= WIDTH || head.y < 0 || head.y >= HEIGHT) {
+            isGameOver = true;
+        }
+        // Check for collision with itself
+        for (int i = 1; i < snake.size(); i++) {
+            if (head.equals(snake.get(i))) {
+                isGameOver = true;
+            }
+        }
+    }
+
+    @Override
+    public void paint(Graphics g) {
+        super.paint(g);
+        
+        // Draw food
+        g.setColor(Color.RED);
+        g.fillRect(food.x, food.y, SIZE, SIZE);
+        
+        // Draw snake
+        g.setColor(Color.GREEN);
+        for (Point point : snake) {
+            g.fillRect(point.x, point.y, SIZE, SIZE);
+        }
+        
+        // Draw game over message
+        if (isGameOver) {
+            g.setColor(Color.BLACK);
+            g.setFont(new Font("Arial", Font.BOLD, 20));
+            g.drawString("Game Over!", WIDTH / 2 - 50, HEIGHT / 2);
+        }
+    }
+    
+    public static void main(String[] args) {
+        new SnakeGame();
+    }
+}
